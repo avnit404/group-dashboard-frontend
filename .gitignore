@@ -1,0 +1,11 @@
+.DS_Store
+frontend/.DS_Store
+
+.git
+node_modules
+build
+.env
+
+/frontend/node_modules
+/frontend/.env
+/frontend/build
