@@ -31,17 +31,16 @@ const DashboardPage = () => {
     const [tableIndex, setTableIndex] = useState()
     const dispatch = useDispatch();
     const data = useSelector(state => state.groups.groupData)
-    const tableColumn = useSelector(state=>state.tableColumn.tableColumn)
+    const tableColumn = useSelector(state => state.tableColumn.tableColumn)
     const [selectedGroupData, setSelectedGroupData] = useState(data)
 
-
-    useEffect(()=>{
+    useEffect(() => {
         setGroupData(data)
-    },[data])
+    }, [data])
 
-    useEffect(()=>{
+    useEffect(() => {
         setFetchTableData(tableColumn)
-    },[tableColumn])
+    }, [tableColumn])
 
     useEffect(() => {
         setVisibleColumns(columnData.slice(0, 5))
@@ -65,14 +64,14 @@ const DashboardPage = () => {
         // getTableData()
     }, [])
 
-    const getGroupData = async () => {
-        try {
-            const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/group/getGroup`)
-            setGroupData((result.data.groups))
-        } catch (error) {
-            console.log(error)
-        }
-    }
+    // const getGroupData = async () => {
+    //     try {
+    //         const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/group/getGroup`)
+    //         setGroupData((result.data.groups))
+    //     } catch (error) {
+    //         console.log(error)
+    //     }
+    // }
     const getTableData = async () => {
         try {
             const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/group/getTableAndColumn`)
@@ -84,28 +83,39 @@ const DashboardPage = () => {
     const handleChangeTable = (checked, labelName) => {
         const groupNames = selectedGroup.map(group => group.groupName);
         setSelectedTable([]);
-
-        const updatedSelectedTables = selectedTable.filter(table => !(table.tableName === labelName && table.groupName === groupNames[0]));
-
-        if (checked) {
+    
+        let updatedSelectedTables = [...selectedTable];
+    
+        // If the table is unchecked, remove it from updatedSelectedTables
+        if (!checked) {
+            updatedSelectedTables = updatedSelectedTables.filter(table => !(table.tableName === labelName && table.groupName === groupNames[0]));
+        } else {
+            // If the table is checked, add it to updatedSelectedTables
             updatedSelectedTables.push({ checked: checked, tableName: labelName, groupName: groupNames[0] });
         }
-
+    
         setSelectedTable(updatedSelectedTables);
-
+    
+        // Update selectedGroupData with the modified table data
         const updatedSelectedGroupData = selectedGroupData.map(item => {
             if (item.groupName === groupNames[0]) {
                 let tables = updatedSelectedTables.filter(table => table.groupName === groupNames[0]).map(table => table.tableName);
-                // Retrieve existing tables if they exist and merge with new tables
                 const existingTables = JSON.parse(item.table || "[]");
-                tables = Array.from(new Set([...existingTables, ...tables])); // Merge existing and new tables, removing duplicates
+                if (!checked) {
+                    // If the table is unchecked, remove it from the existingTables
+                    tables = existingTables.filter(existingTable => existingTable !== labelName);
+                } else {
+                    // If the table is checked, add it to the existingTables
+                    tables = Array.from(new Set([...existingTables, ...tables]));
+                }
                 return { ...item, table: JSON.stringify(tables) };
             }
             return item;
         });
-
+    
         setSelectedGroupData(updatedSelectedGroupData);
     };
+    
 
 
 
@@ -127,7 +137,7 @@ const DashboardPage = () => {
 
     const handleChangeColumn = (checked, column, tableName) => {
         const groupNames = selectedGroup.map(group => group.groupName);
-
+    
         if (checked) {
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
@@ -136,7 +146,7 @@ const DashboardPage = () => {
                     { [column]: column }
                 ]
             }));
-
+    
             const updatedSelectedGroupData = selectedGroupData.map(item => {
                 if (item.groupName === groupNames[0]) {
                     const updatedColumns = {
@@ -150,28 +160,29 @@ const DashboardPage = () => {
                 }
                 return item;
             });
-
+    
             setSelectedGroupData(updatedSelectedGroupData);
         } else {
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
-                [tableName]: prevTableColumns[tableName]?.filter(item => item[column] !== column)
+                [tableName]: (prevTableColumns[tableName] || []).filter(item => item[column] !== column)
             }));
-
+    
             const updatedSelectedGroupData = selectedGroupData.map(item => {
                 if (item.groupName === groupNames[0]) {
                     const updatedColumns = {
                         ...JSON.parse(item.column),
-                        [tableName]: JSON.parse(item.column)[tableName].filter(item => item[column] !== column)
+                        [tableName]: (JSON.parse(item.column)[tableName] || []).filter(entry => Object.keys(entry)[0] !== column)
                     };
                     return { ...item, column: JSON.stringify(updatedColumns) };
                 }
                 return item;
             });
-
+    
             setSelectedGroupData(updatedSelectedGroupData);
         }
     };
+    
 
 
     const saveTableData = async () => {
@@ -186,7 +197,7 @@ const DashboardPage = () => {
                 if (group) {
                     const columnsObj = JSON.parse(group.column);
                     const columnsArray = columnsObj[tableName];
-                
+
                     if (columnsArray && columnsArray.length > columnIndex) {
                         columnsObj[tableName] = updateColumn; // Convert updateColumn to JSON string
                         group.column = JSON.stringify(columnsObj); // Convert columnsObj to JSON string
@@ -198,7 +209,7 @@ const DashboardPage = () => {
                 } else {
                     console.error(`Invalid tableIndex ${tableIndex}`);
                 }
-                
+
             });
             const payload = {
                 id: group.id,
@@ -206,7 +217,7 @@ const DashboardPage = () => {
                 "table": group.table,
                 "column": group.column
             };
-                dispatch(updateGroupRequest(payload))
+            dispatch(updateGroupRequest(payload))
             // try {
             //     const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/group/updateGroup`, payload)
             //     // setFetchTableData(result.data)
@@ -261,18 +272,12 @@ const DashboardPage = () => {
         if (columnObject && columnObject.hasOwnProperty(oldColumnName)) {
             columnObject[oldColumnName] = newValue;
         }
-
-
         setUpdateColumn(updatedColumns);
-
-        // Set other states as necessary
         setoldColumnName(oldColumnName);
         setColumnIndex(columnIndex);
         setTableName(tableName);
         setTableIndex(tableIndex);
     };
-
-
 
     return (
         <div className='datatable-hidden-fields'>
@@ -383,11 +388,11 @@ const DashboardPage = () => {
                                             <input type="text" class="form-control" placeholder="Find a Field" onChange={handleSearchChange} />
                                         </div>
                                         {visibleColumns && visibleColumns.map((item) => {
-                                            // const isSelected = selectedGroupData && selectedGroupData[0].column && JSON.parse(selectedGroupData[0].column)?.[latestTableName]?.includes(item);
-                                            return (
+                                            const columnsData = selectedGroupData && selectedGroupData[0]?.column && JSON.parse(selectedGroupData[0].column);
+                                            const isSelected = columnsData && columnsData[latestTableName]?.some(column => column.hasOwnProperty(item)); return (
                                                 <div key={item} className="form-cntl">
                                                     <div className="form-check form-switch">
-                                                        <input className="form-check-input" type="checkbox" value="" id={`tbl-${item}`} onChange={(e) => handleChangeColumn(e.target.checked, item, latestTableName)} />
+                                                        <input className="form-check-input" type="checkbox" value="" id={`tbl-${item}`} onChange={(e) => handleChangeColumn(e.target.checked, item, latestTableName)} checked={isSelected} />
                                                         <label className="form-check-label" htmlFor={`tbl-${item}`}>{item}</label>
                                                     </div>
                                                 </div>
@@ -400,15 +405,15 @@ const DashboardPage = () => {
                             <div class="col col-xl-6">
                                 <label class="form-label">Column(s) Selected</label>
                                 <div id="tablesHelpBlock" class="form-text">
-                                    {/* <ul>
+                                    <ul>
                                         {column[latestTableName]?.map((item) => {
                                             return (
                                                 <li>
-                                                    {item}
+                                                    {Object.keys(item)}
                                                 </li>
                                             )
                                         })}
-                                    </ul> */}
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -445,9 +450,9 @@ const DashboardPage = () => {
                                                                     <th scope="row">{columnIndex + 1}</th>
                                                                     <td>{tableName}</td>
                                                                     <td className="d-flex">
-                                                                        {Object.values(column)[0]}{' '}
+                                                                        {Object.keys(column)[0]}{' '} :  {Object.values(column)[0]}{' '}
                                                                         <div className="edit-pencil">
-                                                                            <input type='text' style={{ width: "50px", height: "18px", marginLeft: '10px' }} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
+                                                                            <input type='text'  style={{ width: "50px", height: "18px", marginLeft: '10px' }} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
                                                                         </div>
                                                                     </td>
                                                                     <td>{Object.values(column)[0]}</td>
@@ -463,10 +468,6 @@ const DashboardPage = () => {
                             ))}
                         </tbody>
                     </table>
-
-
-
-
                 </div>
                 <UpdateModal
                     show={show}
@@ -477,7 +478,6 @@ const DashboardPage = () => {
                     handleClose={handleCloseGroupDetail}
                     setCreateGroupDetail={setCreateGroupDetail}
                     createGroupDetail={createGroupDetail}
-                    getGroupData={getGroupData}
                 />
             </div>
         </div>

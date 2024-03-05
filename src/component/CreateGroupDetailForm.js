@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { createGroup, createGroupRequest } from '../redux/create-group/createGroupsType';
 import { getGroup } from '../redux/group/groupType';
 
-const CreateGroupDetailForm = ({show, handleClose ,setCreateGroupDetail,createGroupDetail,getGroupData}) => {
+const CreateGroupDetailForm = ({show, handleClose ,setCreateGroupDetail,createGroupDetail}) => {
     const dispatch = useDispatch()
 
     const createGroupDetailData = (e)=>{
