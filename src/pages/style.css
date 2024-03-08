@@ -5,8 +5,9 @@
   margin-bottom: 1rem;
 }
 .custom-left {
-  background-color: rgba(0, 0, 0, 0.06);
-  padding-top: 15px;
+  width: 270px;
+  padding: 0;
+  min-height: 100vh
 }
 .datatable-hidden-fields .dropdown-toggle {
   background-color: #f4e5ee;
@@ -21,6 +22,12 @@
 }
 .datatable-hidden-fields .dropdown-search .form-control {
   background-color: #f7f8fb;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-left: 0;
+  border-right: 0;
 }
 .dropdown-menu .form-switch .form-check-input:checked + .form-check-label {
   color: #000000;
@@ -69,4 +76,46 @@
 }
 .dropdown-menu .form-switch .form-check-label {
   color: #000 !important;
+}
+.datatable-hidden-fields .dropdown-search {
+  margin-bottom: 1rem;
+}
+.input-group-append {
+  position: relative;
+}
+.dropdown-search .input-group-text {
+  background-color: var(--bg-transparent);
+  height: 100%;
+  padding: 0 10px;
+  border-radius: 0;
+  position: absolute;
+  border: none;
+  font-size: 14px;
+  z-index: 6;
+}
+.input-group>:not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+.group-name{
+  background-color: #19406f;
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    height:30px;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+h6{
+  margin-bottom: 0;
+}
+.spinner-border{
+  position: absolute;
+  right:50%
 }
