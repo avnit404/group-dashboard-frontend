@@ -1,5 +1,4 @@
 .datatable-hidden-fields {
-  background-color: #f7f8fb;
   border-bottom: 1px solid #d8dce8;
   padding: 8px 1rem;
   margin-bottom: 1rem;
@@ -7,15 +6,22 @@
 .custom-left {
   width: 270px;
   padding: 0;
-  min-height: 100vh
+  min-height: 100vh;
 }
 .datatable-hidden-fields .dropdown-toggle {
-  background-color: #f4e5ee;
-  border-color: #eeb1cb;
-  color: #000000;
+  background-color: gray;
+  border-color: gray;
+  color: #fff;
+}
+.datatable-hidden-fields .add-button {
+  background-color: gray;
+  border-color: gray;
+  color: #fff;
 }
 .form-control {
   margin-bottom: 10px;
+  background-color: transparent;
+  border: none;
 }
 .datatable-hidden-fields .dropdown-menu {
   padding: 10px;
@@ -56,23 +62,29 @@
   outline: none;
   border: none;
 }
+
+.form-switch {
+  padding-left: 0;
+}
+
 .custom-right {
-    background-color: rgba(0,0,0,0.06);
-    padding-left: 0;
-    padding-right: 0;
-    padding-top: 15px;
+  background-color: rgba(0, 0, 0, 0.06);
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 15px;
 }
-.tbl-info{
-    border-radius: 6px;;
+.tbl-info {
+  border-radius: 6px;
 }
-.table-bordered>:not(caption)>* {
-    border-width:1px;
+.table-bordered > :not(caption) > * {
+  border-width: 1px;
 }
-.row-high th, .row-high td {
-    background-color: #19406f;
-    color: #fff;
-    font-weight: 600;
-    text-align: center;
+.row-high th,
+.row-high td {
+  background-color: #19406f;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
 }
 .dropdown-menu .form-switch .form-check-label {
   color: #000 !important;
@@ -93,7 +105,10 @@
   font-size: 14px;
   z-index: 6;
 }
-.input-group>:not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+.input-group
+  > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(
+    .valid-feedback
+  ):not(.invalid-tooltip):not(.invalid-feedback) {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-top-right-radius: 0;
@@ -101,21 +116,43 @@
   border-left: 0;
   border-right: 0;
 }
-.group-name{
+.group-name {
   background-color: #19406f;
-    color: #fff;
-    font-weight: 600;
-    text-align: center;
-    height:30px;
-    align-items: center;
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  height: 30px;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }
-h6{
+h6 {
   margin-bottom: 0;
 }
-.spinner-border{
+.spinner-border {
   position: absolute;
-  right:50%
+  right: 50%;
+}
+.suggestions-list {
+  position: absolute;
+  width: 430px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  list-style-type: none;
+  padding: 10px;
+  margin: 0;
+}
+
+.suggestions-list li {
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background-color: #f4f4f4;
 }
