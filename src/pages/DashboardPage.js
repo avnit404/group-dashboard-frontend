@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import './style.css'
 import Dropdown from 'react-bootstrap/Dropdown';
-import { Edit2, Plus, Trash, Trash2, X } from 'react-feather'
+import { Trash2 } from 'react-feather'
 import UpdateModal from '../component/UpdateModal';
 import CreateGroupDetailForm from '../component/CreateGroupDetailForm';
 import Button from 'react-bootstrap/esm/Button';
@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getGroup } from '../redux/group/groupType';
 import { getTableAndColumn } from '../redux/tableColumn/tableColumnType';
 import { updateGroupRequest } from '../redux/update-Group/updateGroupType';
+import Spinner from 'react-bootstrap/Spinner';
 
 const DashboardPage = () => {
 
@@ -38,6 +39,7 @@ const DashboardPage = () => {
     const [columnBox, setColumnBox] = useState(false)
     const [currentTable, setCurrentTable] = useState('')
     const [currentColumn, setCurrentColumn] = useState('')
+    const [showLoader, setShowLoader] = useState(false);
     useEffect(() => {
         setGroupData(data)
     }, [data])
@@ -91,11 +93,9 @@ const DashboardPage = () => {
 
         let updatedSelectedTables = [...selectedTable];
 
-        // If the table is unchecked, remove it from updatedSelectedTables
         if (!checked) {
             updatedSelectedTables = updatedSelectedTables.filter(table => !(table.tableName === labelName && table.groupName === groupNames[0]));
         } else {
-            // If the table is checked, add it to updatedSelectedTables
             updatedSelectedTables.push({ checked: checked, tableName: labelName, groupName: groupNames[0] });
         }
 
@@ -134,6 +134,10 @@ const DashboardPage = () => {
             setSelectedGroupData([])
         }
         setVisibleTable(fetchTableData.tables)
+        setShowLoader(true)
+        setTimeout(() => {
+            setShowLoader(false);
+        }, 1000);
     }
 
     const handleCloseGroupDetail = () => {
@@ -142,8 +146,11 @@ const DashboardPage = () => {
 
     const handleChangeColumn = (checked, column, tableName) => {
         const groupNames = selectedGroup.map(group => group.groupName);
-        console.log("checked", checked)
-        if (checked) {
+        const findColumn = selectedGroupData.map((columnData) => JSON.parse(columnData.column))
+        const existColumn = findColumn[0][tableName]
+        const isExistColumn = existColumn?.some((item) => Object.keys(item)[0] === column)
+
+        if (checked && !isExistColumn) {
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
                 [tableName]: [
@@ -166,7 +173,7 @@ const DashboardPage = () => {
                 return item;
             });
             setSelectedGroupData(updatedSelectedGroupData);
-        } else {
+        } else if (!checked) {
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
                 [tableName]: (prevTableColumns[tableName] || []).filter(item => item[column] !== column)
@@ -175,15 +182,20 @@ const DashboardPage = () => {
                 if (item.groupName === groupNames[0]) {
                     const updatedColumns = {
                         ...JSON.parse(item.column),
-                        [tableName]: (JSON.parse(item.column)[tableName] || []).filter(entry => Object.keys(entry)[0] !== column)
+                        [tableName]: (JSON.parse(item.column)[tableName] || []).filter(entry => Object.values(entry)[0] !== column)
                     };
                     return { ...item, column: JSON.stringify(updatedColumns) };
                 }
                 return item;
             });
             setSelectedGroupData(updatedSelectedGroupData);
+            setShowLoader(true);
+            setTimeout(() => {
+                setShowLoader(false);
+            }, 1000);
         }
     };
+
 
 
 
@@ -220,14 +232,15 @@ const DashboardPage = () => {
                 "column": group.column
             };
             dispatch(updateGroupRequest(payload))
-            // try {
-            //     const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/group/updateGroup`, payload)
-            //     // setFetchTableData(result.data)
 
-            // } catch (error) {
-            //     console.log(error)
-            // }
-            dispatch(getGroup())
+            setTimeout(() => {
+                getGroupData()
+            }, 2000)
+            setShowLoader(true);
+            setTimeout(() => {
+                setShowLoader(false);
+            }, 1000);
+        
         } else {
             const groupName = selectedGroupData.map((item) => item.groupName)[0]
             const table = selectedGroupData.map((item) => JSON.parse(item.table))
@@ -247,7 +260,13 @@ const DashboardPage = () => {
             //     console.log(error)
             // }
             dispatch(updateGroupRequest(payload))
-            dispatch(getGroup())
+            setTimeout(() => {
+                getGroupData()
+            }, 2000)
+            setShowLoader(true);
+            setTimeout(() => {
+                setShowLoader(false);
+            }, 1000);
         }
 
 
@@ -287,6 +306,20 @@ const DashboardPage = () => {
         setVisibleTable(filteredTables)
     }
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.dropdown-search')) {
+                setTableBox(false);
+                setColumnBox(false)
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, []);
     return (
         <div className='datatable-hidden-fields'>
             <div className='row'>
@@ -310,7 +343,6 @@ const DashboardPage = () => {
                                                 groupData && groupData.map((item) => {
                                                     return (
                                                         <div class="form-check form-switch">
-                                                            {/* <input class="form-check-input" type="checkbox" checked={selectedGroup.some(table => table.groupName === item.groupName) ? selectedGroup.find(table => table.groupName === item.groupName).checked : false} id="tbl0" onChange={(e) => hanleChangeGroup(e.target.checked, item.groupName, item)} /> */}
                                                             <label class="form-check-label" for="tbl0" onClick={() => hanleChangeGroup(true, item.groupName, item)}>{item.groupName}</label>
                                                         </div>
                                                     )
@@ -343,7 +375,7 @@ const DashboardPage = () => {
                     <div class="form-control">
                         <div class="row">
                             <div class="col col-xl-3">
-                            {selectedGroupData && selectedGroupData[0]?.table   &&     <div class="dropdown-search input-group">
+                                {selectedGroupData && selectedGroupData[0]?.table && <div class="dropdown-search input-group">
                                     <div class="input-group-append">
                                         <label for="table-search" class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></label>
                                     </div>
@@ -354,15 +386,11 @@ const DashboardPage = () => {
                                             setVisibleColumns([])
                                             setCurrentColumn('')
                                         }
-                                    }} onFocus={() => setTableBox(true)} onBlur={() => setTimeout(() => {
-                                        setTableBox(false)
-                                    }, 100)} />
+                                    }} onFocus={() => setTableBox(true)} />
                                 </div>}
                                 {tableBox && <ul className="suggestions-list">
                                     {
                                         visibleTable?.map((item) => {
-                                            const isTableExists = selectedGroupData && selectedGroupData[0]?.table && JSON.parse(selectedGroupData[0]?.table)?.includes(item);
-
                                             return (
                                                 <li onClick={() => {
                                                     if (selectedGroup && selectedGroup[0] && selectedGroup[0].groupName) {
@@ -387,24 +415,23 @@ const DashboardPage = () => {
                                     <input type="text" className="form-control" value={currentColumn} placeholder="Find a Column" onChange={(e) => {
                                         handleSearchChange(e)
                                         setCurrentColumn(e.target.value)
-                                    }} onFocus={() => setColumnBox(true)} onBlur={() => setTimeout(() => {
-                                        setColumnBox(false)
-                                    }, 100)} />
+                                    }} onFocus={() => setColumnBox(true)} />
                                 </div>
                                 <div class="form-cntl">
                                     {columnBox && <ul className="suggestions-list">
                                         {visibleColumns && visibleColumns.map((item) => {
-                                            const columnsData = selectedGroupData && selectedGroupData[0]?.column && JSON.parse(selectedGroupData[0].column);
-                                            const isSelected = columnsData && columnsData[latestTableName]?.some(column => column.hasOwnProperty(item)); return (
-                                                <li onClick={(e) => {
+                                                const findColumn = selectedGroupData.map((columnData) => JSON.parse(columnData.column))
+                                                const existColumn = findColumn[0][latestTableName]
+                                                const isExistColumn = existColumn?.some((itemData) => Object.keys(itemData)[0] === item)
+                                            return (
+                                                <li onClick={(e) => { !isExistColumn &&
                                                     handleChangeColumn(true, item, latestTableName)
                                                     setColumnBox(false)
                                                     setCurrentColumn(item)
                                                 }}>
                                                     <div key={item} className="form-cntl">
                                                         <div className="form-check form-switch">
-                                                            {/* <input className="form-check-input" type="checkbox" value="" id={`tbl-${item}`} onChange={(e) => handleChangeColumn(e.target.checked, item, latestTableName)} checked={isSelected} /> */}
-                                                            <label className="form-check-label" htmlFor={`tbl-${item}`} onClick={() => handleChangeColumn(true, item, latestTableName)}>{item}</label>
+                                                            <label className={isExistColumn ? "disable":"form-check-label"} htmlFor={`tbl-${item}`} onClick={() => handleChangeColumn(true, item, latestTableName)}>{item}</label>
                                                         </div>
                                                     </div>
                                                 </li>
@@ -423,10 +450,13 @@ const DashboardPage = () => {
                         </div>
 
                     </div>
-                  {selectedGroupData && selectedGroupData[0] && <Button onClick={() => saveTableData()}>Save</Button>}
+                    {selectedGroupData && selectedGroupData[0] && <Button onClick={() => saveTableData()}>Save</Button>}
                 </div>
                 <div className='col-md-12 custom-right'>
-                    <table className="table table-bordered">
+                   {showLoader ?
+                        <Spinner />
+                        :  
+                   <table className="table table-bordered">
                         <tbody className="tbl-info">
                             {selectedGroupData && selectedGroupData.length > 0 && selectedGroupData.map((group, groupIndex) => (
                                 <React.Fragment key={groupIndex}>
@@ -474,7 +504,7 @@ const DashboardPage = () => {
                                 </React.Fragment>
                             ))}
                         </tbody>
-                    </table>
+                    </table>}
                 </div>
                 <UpdateModal
                     show={show}

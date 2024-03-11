@@ -150,9 +150,19 @@ h6 {
   display: flex;
   justify-content: center;
   padding: 5px;
-  cursor: pointer;
+  /* cursor: pointer; */
 }
 
 .suggestions-list li:hover {
   background-color: #f4f4f4;
+}
+.ms-3{
+  cursor: pointer;
+}
+.disable{
+  color: gray;
+  cursor: not-allowed;
+}
+.form-check-label{
+  cursor: pointer;
 }
