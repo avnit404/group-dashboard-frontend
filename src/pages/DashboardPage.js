@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import './style.css'
 import Dropdown from 'react-bootstrap/Dropdown';
-import { Trash2 } from 'react-feather'
+import { Search, Trash2 } from 'react-feather'
 import UpdateModal from '../component/UpdateModal';
 import CreateGroupDetailForm from '../component/CreateGroupDetailForm';
 import Button from 'react-bootstrap/esm/Button';
@@ -40,6 +40,9 @@ const DashboardPage = () => {
     const [currentTable, setCurrentTable] = useState('')
     const [currentColumn, setCurrentColumn] = useState('')
     const [showLoader, setShowLoader] = useState(false);
+    const [draggedItem, setDraggedItem] = useState(null);
+    const [draggedColumn, setDraggedColumn] = useState()
+
     useEffect(() => {
         setGroupData(data)
     }, [data])
@@ -144,13 +147,14 @@ const DashboardPage = () => {
         setOpenGroupDetail(false)
     }
 
-    const handleChangeColumn = (checked, column, tableName) => {
-        const groupNames = selectedGroup.map(group => group.groupName);
+    const handleChangeColumn = (checked, column, tableName,columnIndex) => {
         const findColumn = selectedGroupData.map((columnData) => JSON.parse(columnData.column))
-        const existColumn = findColumn[0][tableName]
+        const existColumn = findColumn[0]
         const isExistColumn = existColumn?.some((item) => Object.keys(item)[0] === column)
-
-        if (checked && !isExistColumn) {
+        const groupNames = selectedGroup.map(group => group.groupName);
+        
+        if (checked) {
+            // Add the column to the state
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
                 [tableName]: [
@@ -158,32 +162,30 @@ const DashboardPage = () => {
                     { [column]: column }
                 ]
             }));
-
+    
+            // Update selectedGroupData to add the new column
             const updatedSelectedGroupData = selectedGroupData.map(item => {
                 if (item.groupName === groupNames[0]) {
-                    const updatedColumns = {
-                        ...JSON.parse(item.column),
-                        [tableName]: [
-                            ...(JSON.parse(item.column)[tableName] || []),
-                            { [column]: column }
-                        ]
-                    };
+                    const parsedColumn = JSON.parse(item.column);
+                    const updatedColumns = [
+                        ...(parsedColumn || []),
+                        { [column]: column, table: tableName, index: (parsedColumn ? parsedColumn.length : 0) + 1 }
+                    ];
                     return { ...item, column: JSON.stringify(updatedColumns) };
                 }
                 return item;
             });
             setSelectedGroupData(updatedSelectedGroupData);
-        } else if (!checked) {
+        } else if(!checked) {
             setColumn(prevTableColumns => ({
                 ...prevTableColumns,
                 [tableName]: (prevTableColumns[tableName] || []).filter(item => item[column] !== column)
             }));
+    
             const updatedSelectedGroupData = selectedGroupData.map(item => {
                 if (item.groupName === groupNames[0]) {
-                    const updatedColumns = {
-                        ...JSON.parse(item.column),
-                        [tableName]: (JSON.parse(item.column)[tableName] || []).filter(entry => Object.values(entry)[0] !== column)
-                    };
+                    const parsedColumn = JSON.parse(item.column);
+                    const updatedColumns = (parsedColumn || []).filter(entry => entry.index !== columnIndex);
                     return { ...item, column: JSON.stringify(updatedColumns) };
                 }
                 return item;
@@ -194,28 +196,28 @@ const DashboardPage = () => {
                 setShowLoader(false);
             }, 1000);
         }
+      
     };
+    
 
 
 
 
     const saveTableData = async () => {
-
-
+           
 
         if (updateColumn) {
-            const updatedGroupData = [...selectedGroupData];
-            const group = updatedGroupData[tableIndex];
-
+            let updatedGroupData = [...selectedGroupData];
+            const group = updatedGroupData;
             updatedGroupData.forEach((group, groupIndex) => {
                 if (group) {
-                    const columnsObj = JSON.parse(group.column);
-                    const columnsArray = columnsObj[tableName];
+                    let columnsObj = JSON.parse(group.column);
+                    let columnsArray = columnsObj;
 
                     if (columnsArray && columnsArray.length > columnIndex) {
-                        columnsObj[tableName] = updateColumn; // Convert updateColumn to JSON string
+                        columnsObj = updateColumn; // Convert updateColumn to JSON string
                         group.column = JSON.stringify(columnsObj); // Convert columnsObj to JSON string
-                        updatedGroupData[tableIndex] = group;
+                        updatedGroupData = group;
                         // setGroupData(updatedGroupData);
                     } else {
                         console.error(`Invalid columnIndex ${columnIndex} or tableName ${tableName}`);
@@ -226,13 +228,13 @@ const DashboardPage = () => {
 
             });
             const payload = {
-                id: group.id,
-                "groupName": group.groupName,
-                "table": group.table,
-                "column": group.column
+                id: selectedGroupData[0].id,
+                "groupName": selectedGroupData[0].groupName,
+                "table": selectedGroupData[0].table,
+                "column": JSON.stringify(updateColumn)
             };
             dispatch(updateGroupRequest(payload))
-
+            setUpdateColumn()
             setTimeout(() => {
                 getGroupData()
             }, 2000)
@@ -240,7 +242,7 @@ const DashboardPage = () => {
             setTimeout(() => {
                 setShowLoader(false);
             }, 1000);
-        
+
         } else {
             const groupName = selectedGroupData.map((item) => item.groupName)[0]
             const table = selectedGroupData.map((item) => JSON.parse(item.table))
@@ -320,11 +322,50 @@ const DashboardPage = () => {
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
+
+
+    const handleDragStart = (e, item, updatedList) => {
+        setDraggedItem(item.column);
+        setDraggedColumn(updatedList)
+    };
+
+    const handleDragOver = (e, column) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (e, targetIndex, column) => {
+        e.preventDefault();
+        const draggedItem = column;
+    
+        const updatedList = selectedGroupData.map(group => {
+            const columns = JSON.parse(group.column);
+            const draggedIndex = columns.findIndex(col => col.index === draggedItem.index);
+    
+            if (draggedIndex !== -1) { // Check if the dragged item is found
+                const updatedColumns = [...columns];
+    
+                // Remove the dragged item from its current position
+                const [removedItem] = updatedColumns.splice(draggedIndex, 1);
+    
+                // Insert the dragged item at the target index
+                updatedColumns.splice(targetIndex, 0, removedItem);
+    
+                return {
+                    ...group,
+                    column: JSON.stringify(updatedColumns)
+                };
+            }
+            return group;
+        });
+            
+        setSelectedGroupData(updatedList);
+    };
+    
+    
     return (
         <div className='datatable-hidden-fields'>
             <div className='row'>
                 <div className='col-md-12'>
-                    {/* <div className='d-flex justify-content-end'><Plus style={{ cursor: 'pointer' }} /></div> */}
                     <div class="form-control">
                         <div class="d-flex">
                             <div >
@@ -377,7 +418,7 @@ const DashboardPage = () => {
                             <div class="col col-xl-3">
                                 {selectedGroupData && selectedGroupData[0]?.table && <div class="dropdown-search input-group">
                                     <div class="input-group-append">
-                                        <label for="table-search" class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></label>
+                                        <label for="table-search" class="input-group-text"><Search /> </label>
                                     </div>
                                     <input type="text" id="table-search" class="form-control mb-0" value={currentTable} placeholder="Find a Table" onChange={(e) => {
                                         handleSearchTable(e)
@@ -411,8 +452,11 @@ const DashboardPage = () => {
 
                             </div>
                             {currentTable && <div class="col col-xl-3">
-                                <div class="dropdown-search" >
-                                    <input type="text" className="form-control" value={currentColumn} placeholder="Find a Column" onChange={(e) => {
+                                <div class="dropdown-search input-group" >
+                                    <div class="input-group-append">
+                                        <label for="table-search" class="input-group-text"><Search /> </label>
+                                    </div>
+                                    <input type="text" className="form-control mb-0" value={currentColumn} placeholder="Find a Column" onChange={(e) => {
                                         handleSearchChange(e)
                                         setCurrentColumn(e.target.value)
                                     }} onFocus={() => setColumnBox(true)} />
@@ -420,18 +464,18 @@ const DashboardPage = () => {
                                 <div class="form-cntl">
                                     {columnBox && <ul className="suggestions-list">
                                         {visibleColumns && visibleColumns.map((item) => {
-                                                const findColumn = selectedGroupData.map((columnData) => JSON.parse(columnData.column))
-                                                const existColumn = findColumn[0][latestTableName]
-                                                const isExistColumn = existColumn?.some((itemData) => Object.keys(itemData)[0] === item)
+                                            const findColumn = selectedGroupData.map((columnData) => JSON.parse(columnData.column))
+                                            const existColumn = findColumn[0]
+                                            const isExistColumn = existColumn?.some((itemData) => Object.keys(itemData)[0] === item)
                                             return (
-                                                <li onClick={(e) => { !isExistColumn &&
-                                                    handleChangeColumn(true, item, latestTableName)
+                                                <li onClick={(e) => {
+                                                        handleChangeColumn(true, item, latestTableName)
                                                     setColumnBox(false)
                                                     setCurrentColumn(item)
                                                 }}>
                                                     <div key={item} className="form-cntl">
                                                         <div className="form-check form-switch">
-                                                            <label className={isExistColumn ? "disable":"form-check-label"} htmlFor={`tbl-${item}`} onClick={() => handleChangeColumn(true, item, latestTableName)}>{item}</label>
+                                                            <label className={"form-check-label"} htmlFor={`tbl-${item}`} onClick={() => handleChangeColumn(true, item, latestTableName)}>{item}</label>
                                                         </div>
                                                     </div>
                                                 </li>
@@ -453,58 +497,68 @@ const DashboardPage = () => {
                     {selectedGroupData && selectedGroupData[0] && <Button onClick={() => saveTableData()}>Save</Button>}
                 </div>
                 <div className='col-md-12 custom-right'>
-                   {showLoader ?
+                    {showLoader ?
                         <Spinner />
-                        :  
-                   <table className="table table-bordered">
-                        <tbody className="tbl-info">
-                            {selectedGroupData && selectedGroupData.length > 0 && selectedGroupData.map((group, groupIndex) => (
-                                <React.Fragment key={groupIndex}>
-                                    <tr className="row-high">
-                                        <th scope="row">{group.id}</th>
-                                        <td>{group.groupName}</td>
-                                    </tr>
-                                    {group.table && group.column && JSON.parse(group.column) && JSON.parse(group.table) && JSON.parse(group.table).length > 0 && JSON.parse(group.table).map((tableName, tableIndex) => {
-                                        const columns = JSON.parse(group.column)[tableName] || [];
-                                        if (columns && columns.length > 0) {
-                                            return (
-                                                <tr key={`${groupIndex}-${tableIndex}`}>
-                                                    <td className="colspanclass" colSpan="4">
-                                                        <table className="table mb-0">
-                                                            <thead className="innerth">
-                                                                <tr>
-                                                                    <th scope="col">#</th>
-                                                                    <th scope="col">Table Name</th>
-                                                                    <th scope="col">Display Name</th>
-                                                                    <th scope="col">Internal Name</th>
-                                                                    <th scope="col">Delete</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {columns.map((column, columnIndex) => (
-                                                                    <tr key={`${groupIndex}-${tableIndex}-${columnIndex}`}>
-                                                                        <th scope="row">{columnIndex + 1}</th>
-                                                                        <td>{tableName}</td>
-                                                                        <td className="d-flex">
-                                                                            <div className="edit-pencil">
-                                                                                <input type='text' defaultValue={Object.values(column)[0]} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
-                                                                            </div>
-                                                                        </td>
-                                                                        <td>{Object.keys(column)[0]}</td>
-                                                                        <td><div className="ms-3"><Trash2 onClick={() => handleChangeColumn(false, Object.values(column)[0], tableName)} /></div></td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        }
-                                    })}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>}
+                        :
+                        <table className="table table-bordered">
+                            <tbody className="tbl-info">
+                                {selectedGroupData && selectedGroupData.length > 0 && selectedGroupData.map((group, groupIndex) => (
+                                    <React.Fragment key={groupIndex}>
+                                        <tr className="row-high">
+                                            <th scope="row">{group.id}</th>
+                                            <td>{group.groupName}</td>
+                                        </tr>
+
+                                        <tr key={`${groupIndex}-${tableIndex}`}>
+                                            <td className="colspanclass" colSpan="4">
+                                                <table className="table mb-0">
+                                                    <thead className="innerth">
+                                                        <tr>
+                                                            <th scope="col">#</th>
+                                                            <th scope="col">Table Name</th>
+                                                            <th scope="col">Display Name</th>
+                                                            <th scope="col">Internal Name</th>
+                                                            <th scope="col">Delete</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {group.table && group.column && JSON.parse(group.column) && JSON.parse(group.table) && JSON.parse(group.table).length > 0 && JSON.parse(group.table).map((tableName, tableIndex) => {
+                                                            const columns = JSON.parse(group.column) || [];
+
+                                                            if (columns && columns.length > 0) {
+                                                                return (
+                                                                    columns.map((column, columnIndex) => {
+                                                                       if(column.table === tableName)  
+                                                                       return(<tr  key={`${groupIndex}-${tableIndex}-${columnIndex}`} draggable={true}
+                                                                            onDragStart={(e) => handleDragStart(e, column, group)}
+                                                                            onDragOver={(e) => handleDragOver(e, column)}
+                                                                            onDrop={(e) => handleDrop(e, tableIndex,column)}>
+                                                                            <th scope="row">{columnIndex + 1}</th>
+                                                                            <td>{column.table}</td>
+                                                                            <td className="d-flex">
+                                                                                <div className="edit-pencil">
+                                                                                    <input type='text' defaultValue={Object.values(column)[0]} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>{Object.keys(column)[0]}</td>
+                                                                            <td><div className="ms-3"><Trash2 onClick={() => handleChangeColumn(false, Object.keys(column)[0], tableName,column.index )} /></div></td>
+                                                                        </tr>)
+                                                                })
+
+                                                                )
+                                                            }
+
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+
+
+                                    </React.Fragment>
+                                ))}
+                            </tbody>
+                        </table>}
                 </div>
                 <UpdateModal
                     show={show}

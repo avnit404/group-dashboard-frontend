@@ -166,3 +166,9 @@ h6 {
 .form-check-label{
   cursor: pointer;
 }
+.datatable-hidden-fields .dropdown-search .form-control {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  padding-left: 36px;
+}
