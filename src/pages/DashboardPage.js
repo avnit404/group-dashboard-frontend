@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './style.css'
 import Dropdown from 'react-bootstrap/Dropdown';
-import { Search, Trash2 } from 'react-feather'
+import { Menu, Search, Trash2 } from 'react-feather'
 import UpdateModal from '../component/UpdateModal';
 import CreateGroupDetailForm from '../component/CreateGroupDetailForm';
 import Button from 'react-bootstrap/esm/Button';
@@ -512,21 +512,22 @@ const DashboardPage = () => {
                             <tbody className="tbl-info">
                                 {selectedGroupData && selectedGroupData.length > 0 && selectedGroupData.map((group, groupIndex) => (
                                     <React.Fragment key={groupIndex}>
-                                        <tr className="row-high">
+                                        {/* <tr className="row-high">
                                             <th scope="row">{group.id}</th>
                                             <td>{group.groupName}</td>
-                                        </tr>
+                                        </tr> */}
 
                                         <tr key={`${groupIndex}-${tableIndex}`}>
                                             <td className="colspanclass" colSpan="4">
-                                                <table className="table mb-0">
+                                            <table className="table mb-0">
                                                     <thead className="innerth">
                                                         <tr>
-                                                            <th scope="col">#</th>
-                                                            <th scope="col">Table Name</th>
-                                                            <th scope="col">Display Name</th>
-                                                            <th scope="col">Internal Name</th>
-                                                            <th scope="col">Delete</th>
+                                                            <th style={{width:"10%",textAlign:"center"}}>Move</th>
+                                                            <th style={{width:"10%",textAlign:"center"}}>#</th>
+                                                            <th style={{width:"20%",textAlign:"center"}}>Table Name</th>
+                                                            <th style={{width:"20%",textAlign:"center"}}>Display Name</th>
+                                                            <th style={{width:"20%",textAlign:"center"}}>Internal Name</th>
+                                                            <th style={{width:"20%",textAlign:"center"}}>Delete</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody >
@@ -539,15 +540,14 @@ const DashboardPage = () => {
                                                                     onDragEnd={(e) => drop(e)}
                                                                     draggable={true}
                                                                 >
-                                                                    <th scope="row">{columnIndex + 1}</th>
-                                                                    <td>{column.table}</td>
-                                                                    <td className="d-flex">
-                                                                        <div className="edit-pencil">
-                                                                            <input type='text' value={Object.values(column)[0]} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
-                                                                        </div>
+                                                                    <th style={{width:"10%",textAlign:"center"}}><Menu style={{cursor:'pointer'}}/></th>
+                                                                    <th style={{width:"10%",textAlign:"center"}}>{columnIndex + 1}</th>
+                                                                    <td style={{width:"20%",textAlign:"center"}}>{column.table}</td>
+                                                                    <td style={{width:"20%",textAlign:"center"}}>
+                                                                            <input className="form-control-update" style={{marginLeft:'8px'}} type='text' value={Object.values(column)[0]} onChange={(e) => handleUpdateColumn(e.target.value, Object.keys(column)[0], columnIndex, tableName, groupIndex, columns)} />
                                                                     </td>
-                                                                    <td>{Object.keys(column)[0]}</td>
-                                                                    <td><div className="ms-3"><Trash2 onClick={() => handleChangeColumn(false, Object.keys(column)[0], tableName, column.uniqueId)} /></div></td>
+                                                                    <td style={{width:"20%",textAlign:"center"}}>{Object.keys(column)[0]}</td>
+                                                                    <td style={{width:"20%",textAlign:"center"}}><div className="ms-3"><Trash2 onClick={() => handleChangeColumn(false, Object.keys(column)[0], tableName, column.uniqueId)} /></div></td>
                                                                 </tr>)
                                                             })
 
@@ -556,6 +556,7 @@ const DashboardPage = () => {
                                                         }
                                                     </tbody>
                                                 </table>
+                                                
                                             </td>
                                         </tr>
                                     </React.Fragment>

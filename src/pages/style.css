@@ -72,6 +72,7 @@
   padding-left: 0;
   padding-right: 0;
   padding-top: 15px;
+  margin-top: 12px;
 }
 .tbl-info {
   border-radius: 6px;
@@ -171,4 +172,7 @@ h6 {
   border-left: none;
   border-right: none;
   padding-left: 36px;
+}
+.form-control-update{
+  border: 2px solid black
 }
